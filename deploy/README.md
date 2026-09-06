@@ -13,24 +13,83 @@ browser ──▶ :443 Caddy ──┬── /api/*  ──▶ join-collector:80
                          └── /*      ──▶ /srv/site  (read-only mount of ../site)
 ```
 
-## DNS
+## DNS (Strato)
 
-Point the domain at the VM. Both records, so `www` works too:
+The domain is at Strato. In the Kunden-Login: **Domains → Domainverwaltung →**
+the gear icon next to `process-science.org` **→ DNS** tab.
+
+Set two things, and delete or repoint a third:
+
+| Record | Strato control | Value |
+| --- | --- | --- |
+| `A` | **A-Record verwalten → Eigene IP-Adresse** | the VM's public IPv4 |
+| `AAAA` | **AAAA-Record verwalten** | the VM's public IPv6, **or remove the record** |
+| `MX` | **MX-Record verwalten** | **do not touch** |
+
+Save each with **Einstellungen übernehmen**.
+
+### The AAAA record will break the certificate if you forget it
+
+This is the trap, and it is not hypothetical: it happened during testing.
+
+Out of the box Strato publishes **both** an A and an AAAA record pointing at
+its own parking servers:
 
 ```
-process-science.org.        A      <VM public IPv4>
-www.process-science.org.    A      <VM public IPv4>
+process-science.org.  A     217.160.0.80
+process-science.org.  AAAA  2001:8d8:100f:f000::200
 ```
 
-Add `AAAA` records as well if the VM has a public IPv6 address.
+Let's Encrypt resolves AAAA **before** A. If you change only the A record, the
+validation request goes to Strato over IPv6, gets Strato's parking page instead
+of Caddy's challenge response, and the certificate fails, with an error that
+looks like DNS has not propagated:
 
-Caddy obtains and renews the Let's Encrypt certificate itself. For that to
-work, **ports 80 and 443 must be reachable from the internet** and DNS must
-already resolve to the VM. Do the DNS first, then start the stack, or the first
-certificate request fails and Caddy backs off before retrying.
+```
+Invalid response from http://process-science.org/.well-known/acme-challenge/...: 204
+```
 
-Mail is unaffected by this. `MX` records are separate from `A` records, so a
-mailbox or forwarder on `process-science.org` coexists with the site.
+So either point the AAAA record at the VM's IPv6 address (Hetzner gives every
+server one, usually the `::1` of its assigned `/64`) or delete the AAAA record
+entirely. Do not leave Strato's.
+
+### www
+
+`www.process-science.org` is already a CNAME to the apex, so it follows the A
+record automatically and needs no separate entry. Confirm after the change:
+
+```bash
+dig +short process-science.org A
+dig +short process-science.org AAAA
+dig +short www.process-science.org
+dig +short process-science.org MX      # must still be smtpin.rzone.de
+```
+
+Wait until the first two return the VM's addresses before starting the stack.
+
+### Mail keeps working
+
+The `MX` record is managed separately from the `A` record at Strato, so
+repointing the site does not affect `info@`, `contact@` or `hello@`. The MX
+must stay `5 smtpin.rzone.de`. If it ever changes, the forwarding is broken.
+
+## Firewall
+
+The VM needs three ports reachable: 22, 80 and 443. **80 is not optional**,
+even though the site is HTTPS only: Let's Encrypt validates over port 80, and
+Caddy uses it to redirect visitors to HTTPS.
+
+If you added a Hetzner Cloud Firewall, allow those three inbound (Cloud Console
+→ Firewalls). A stock Hetzner image has no local firewall active; if you enabled
+`ufw` yourself:
+
+```bash
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+```
+
+Note that Docker publishes ports by writing its own iptables rules, which
+bypass `ufw`. Do not rely on `ufw` alone to keep something private: the
+collector is protected by publishing no port at all, not by a firewall rule.
 
 ## First run
 
@@ -46,13 +105,44 @@ docker compose up -d --build
 
 Check it:
 
+Watch the certificate being issued. This is the step that fails if DNS is
+wrong, and the log says so plainly:
+
 ```bash
-curl -sI https://process-science.org/ | head -3
-curl -s  https://process-science.org/api/healthz
+docker compose logs -f caddy
+```
+
+Look for `certificate obtained successfully`. If you instead see
+`challenge failed` with an IPv6 address in it, the AAAA record is still
+pointing at Strato: fix it and run `docker compose restart caddy`.
+
+Then check it end to end:
+
+```bash
+curl -sI  https://process-science.org/            | head -3   # 200, and a real certificate
+curl -s   https://process-science.org/api/healthz             # {"status":"ok"}
+curl -sI  http://process-science.org/             | head -3   # 308 to https
+curl -sI  https://www.process-science.org/        | head -3   # 301 to the apex
+curl -sI  https://process-science.org/.git/config | head -1   # 404, never 200
 ```
 
 Then open the page, submit the form once yourself, and confirm the row is
 there. Delete the test row afterwards.
+
+### If the certificate does not come
+
+Caddy retries with a growing backoff, so you do not need to restart in a loop.
+Check, in this order:
+
+1. `dig +short process-science.org A` and `AAAA` both return the VM, not
+   `217.160.0.80` or `2001:8d8:...`.
+2. Port 80 is reachable from outside: `curl -sI http://<VM IP>/` from your
+   laptop, not from the VM itself.
+3. `docker compose logs caddy` for the actual ACME error.
+
+Let's Encrypt rate-limits **failed** validations to 5 per hostname per hour, so
+if you have been fighting it for a while, fix the cause and then wait an hour
+rather than retrying immediately.
 
 ## Updating the page
 

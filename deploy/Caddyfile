@@ -2,7 +2,6 @@
 #
 # Same origin is the point: the form posts to /api/join on the page's own host,
 # so there is no CORS to configure and no third party in the path.
-
 {
 	# ACME account address for the Let's Encrypt certificate. Set ACME_EMAIL in
 	# deploy/.env. Caddy obtains and renews the certificate on its own, which
@@ -10,7 +9,14 @@
 	email {$ACME_EMAIL}
 }
 
-process-science.org, www.process-science.org {
+# www redirects to the apex so there is one canonical address for the site.
+# Caddy still gets a certificate for this name, which is why it belongs here
+# rather than in DNS.
+www.process-science.org {
+	redir https://process-science.org{uri} permanent
+}
+
+process-science.org {
 	encode zstd gzip
 
 	header {

@@ -16,7 +16,7 @@ var FORM_ENDPOINT = "/api/join";
 // Shown when a submission fails, and used by the mailto fallback. This is the
 // only place the contact address appears in the JavaScript; the pages carry it
 // in the footer and next to the people list.
-var CONTACT_EMAIL = "zimmermann.tobias@uni-muenster.de";
+var CONTACT_EMAIL = "info@process-science.org";
 
 (function () {
   var form = document.getElementById('joinForm');
