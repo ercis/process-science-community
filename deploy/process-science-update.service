@@ -1,0 +1,12 @@
+[Unit]
+Description=Update the Process Science Community site from git
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/process-science-community
+ExecStart=/root/process-science-community/deploy/auto-update.sh
+# Everything the script prints lands in the journal:
+#   journalctl -u process-science-update.service

@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for Process Science Community updates every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=15s
+# Type=oneshot means systemd will not start a second run while one is going,
+# so a slow rebuild cannot pile up behind the timer.
+
+[Install]
+WantedBy=timers.target

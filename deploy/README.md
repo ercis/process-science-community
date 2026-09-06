@@ -146,22 +146,55 @@ rather than retrying immediately.
 
 ## Updating the page
 
-The site is a read-only bind mount of `../site`, so there is nothing to build
-and nothing to restart:
+`site/` is a read-only bind mount, so for a content change a pull **is** the
+deployment. Nothing to build, nothing to restart:
 
 ```bash
 git pull
 ```
 
-That is the whole deployment. Caddy picks up the new files immediately;
-`assets/` is cached for an hour, so a correction to the people list is visible
-within the hour without a hard refresh.
-
-Changing anything in `../service` does need a rebuild:
+A change under `service/` or `deploy/` does need the stack brought back up:
 
 ```bash
-docker compose up -d --build join-collector
+docker compose up -d --build
 ```
+
+### Automatic updates from git
+
+To get GitHub Pages behaviour, where pushing to `main` updates the live site on
+its own, install the timer. It polls once a minute, pulls when there is
+something to pull, and rebuilds only when `service/` or `deploy/` changed.
+
+```bash
+sudo cp deploy/process-science-update.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now process-science-update.timer
+```
+
+Check it:
+
+```bash
+systemctl list-timers process-science-update.timer
+```
+
+Watch what it does:
+
+```bash
+journalctl -u process-science-update.service -f
+```
+
+The units assume the checkout is at `/root/process-science-community`. If it is
+somewhere else, edit `WorkingDirectory` and `ExecStart` in the `.service` file,
+or set `REPO_DIR` in it.
+
+**Polling rather than a webhook is deliberate.** A webhook would need an
+inbound endpoint, a shared secret and HMAC verification, all to save under a
+minute on a site whose deployment is a `git pull`. The timer needs no secret
+and no inbound access, and it recovers on its own after a reboot or a network
+blip, which a missed webhook delivery does not.
+
+One consequence worth knowing: **the checkout on the VM is a deploy target, not
+a workspace.** The updater runs `git reset --hard origin/main`, so anything
+edited directly on the server is discarded on the next tick. Make changes in
+the repository and push them. `deploy/.env` is gitignored and survives.
 
 ## Getting the submissions out
 

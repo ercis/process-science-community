@@ -83,6 +83,24 @@ var CONTACT_EMAIL = "info@process-science.org";
     showDone();
   }
 
+  /* The in-page check is deliberately looser than the collector's, so the
+     collector can still refuse something (an email address at a reserved
+     domain, say). Name the field it refused rather than saying only that the
+     submission failed, which leaves the visitor with nowhere to go. */
+  var FIELD_LABEL = {
+    email: 'email address',
+    name: 'name',
+    organisation: 'institution or organisation',
+    role: 'role',
+    interest: 'selection',
+    about: 'message'
+  };
+
+  function resetButton() {
+    btn.disabled = false;
+    btn.textContent = 'Join the community';
+  }
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     clearFail();
@@ -98,11 +116,31 @@ var CONTACT_EMAIL = "info@process-science.org";
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     }).then(function (res) {
-      if (!res.ok) throw new Error('status ' + res.status);
-      showDone();
+      if (res.ok) { showDone(); return; }
+
+      if (res.status === 422) {
+        return res.json().catch(function () { return null; }).then(function (body) {
+          var field = '';
+          try { field = String(body.detail[0].loc.slice(-1)[0]); } catch (err) {}
+          var label = FIELD_LABEL[field];
+          resetButton();
+          fail(label
+            ? 'We could not accept that ' + label + '. Please check it and try again.'
+            : 'Something in the form was not accepted. Please check your details and try again.',
+            label ? 'f-' + (field === 'organisation' ? 'org' : field) : null);
+        });
+      }
+
+      if (res.status === 429) {
+        resetButton();
+        fail('That is a lot of submissions from your connection. Please wait a little, or email us at ' + CONTACT_EMAIL + '.');
+        return;
+      }
+
+      throw new Error('status ' + res.status);
     }).catch(function () {
-      btn.disabled = false;
-      btn.textContent = 'Join the community';
+      if (doneView.classList.contains('show') || errBox.classList.contains('show')) return;
+      resetButton();
       fail('Sorry, that did not go through. Please try again, or email us directly at ' + CONTACT_EMAIL + '.');
     });
   });
