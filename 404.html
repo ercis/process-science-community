@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<!-- Root-absolute paths on purpose: GitHub Pages serves this file for a miss at
+     any depth, so relative asset paths would resolve against the wrong folder. -->
+<link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="glyph" viewBox="0 0 26 26">
+    <g fill="none" stroke="currentColor" stroke-width="1.7">
+      <rect x="1" y="9" width="7" height="7" rx="2.2"/>
+      <path d="M8 12.5h1.5" stroke-linecap="round"/>
+      <rect x="9.5" y="9" width="7" height="7" rx="2.2"/>
+      <path d="M16.5 12.5H18" stroke-linecap="round"/>
+    </g>
+    <rect x="18" y="9" width="7" height="7" rx="2.2" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <svg class="glyph" aria-hidden="true"><use href="#glyph"/></svg>
+      Process Science
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Switch to dark theme">&#9790;</button>
+      <a class="btn btn-black" href="/join/">Join</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="hero">
+    <div class="wrap">
+      <span class="hero-chip"><span class="dot"></span> 404</span>
+      <h1>That page is not here.</h1>
+      <p class="sub">The link may be old, or we may have moved something. The community, the platforms and the people are all on the front page.</p>
+      <div class="cta-row">
+        <a class="btn btn-black" href="/">Go to the front page</a>
+        <a class="btn btn-ghost" href="/join/">Join the community</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <span class="foot-mark">
+        <svg class="glyph" aria-hidden="true"><use href="#glyph"/></svg>
+        Process Science
+      </span>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="/">The community</a>
+        <a href="https://www.wi.uni-muenster.de/legal-notice">Imprint</a>
+        <a href="https://www.wi.uni-muenster.de/privacy-statement">Privacy</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    var stored = null;
+    try { stored = localStorage.getItem('psc-theme'); } catch (e) {}
+    function apply(theme) {
+      if (theme === 'dark') { root.setAttribute('data-theme', 'dark'); }
+      else { root.removeAttribute('data-theme'); }
+      if (btn) {
+        btn.textContent = theme === 'dark' ? '☼' : '☾';
+        btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+      }
+    }
+    var current = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    apply(current);
+    if (btn) btn.addEventListener('click', function () {
+      current = current === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('psc-theme', current); } catch (e) {}
+      apply(current);
+    });
+  })();
+</script>
+
+</body>
+</html>
