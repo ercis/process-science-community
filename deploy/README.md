@@ -196,17 +196,43 @@ a workspace.** The updater runs `git reset --hard origin/main`, so anything
 edited directly on the server is discarded on the next tick. Make changes in
 the repository and push them. `deploy/.env` is gitignored and survives.
 
-## Getting the submissions out
+## Reading the submissions
+
+`submissions.sh` wraps the export. Run it from `deploy/`, where it picks the
+token out of `.env` by itself:
 
 ```bash
-curl -H "Authorization: Bearer $JOIN_EXPORT_TOKEN" \
-  https://process-science.org/api/admin/submissions.csv -o join.csv
+./submissions.sh list
+```
+
+| Command | What it does |
+| --- | --- |
+| `./submissions.sh count` | how many so far |
+| `./submissions.sh list` | every submission, readable, newest last |
+| `./submissions.sh interests` | tally of what people want to do, and roles |
+| `./submissions.sh csv [file]` | save the raw CSV for a spreadsheet |
+| `./submissions.sh watch` | live count, refreshed every 10s |
+| `./submissions.sh remove ADDRESS` | delete one person's row |
+
+It works from a laptop too, given the token:
+
+```bash
+JOIN_EXPORT_TOKEN=... ./submissions.sh list
+```
+
+Under it is one authenticated request:
+
+```bash
+curl -H "Authorization: Bearer $JOIN_EXPORT_TOKEN" https://process-science.org/api/admin/submissions.csv
 ```
 
 The export routes are reachable from the internet and protected by that bearer
-token alone, so treat it like a password. It is the only thing standing between
-the internet and everybody's contact details. Rotating it is an edit to `.env`
-and `docker compose up -d join-collector`.
+token alone, so treat it like a password: it is the only thing between the
+internet and everybody's contact details. Rotating it is an edit to `.env` and
+`docker compose up -d join-collector`.
+
+`remove` exists because the consent line on the form promises people can
+withdraw and be removed. Somebody has to own acting on that.
 
 ## Backups
 
@@ -221,20 +247,6 @@ docker run --rm -v deploy_join-data:/data -v "$PWD":/out alpine \
 Put that on a schedule before the form goes in front of an audience. A keynote
 QR code can produce every submission you will ever get in one ten-minute burst,
 and there is no second copy anywhere.
-
-## Removing someone
-
-The consent line on the form promises people can withdraw and be removed, so
-somebody has to be able to act on it:
-
-```bash
-docker compose exec join-collector python -c "
-import sqlite3; c=sqlite3.connect('/data/join.sqlite3')
-print(c.execute(\"DELETE FROM submissions WHERE lower(email)=lower('someone@example.org')\").rowcount)
-c.commit()"
-```
-
-Agree who owns that before launch.
 
 ## Security notes
 

@@ -22,6 +22,8 @@ site/                 the static site, served as the web root
   404.html  robots.txt  sitemap.xml
 service/              the join collector (FastAPI + SQLite)
 deploy/               Caddy + docker compose, the whole VM stack
+  submissions.sh      read the join submissions
+  auto-update.sh      pull and apply on a timer, like GitHub Pages
 keynote/              QR code for the closing slide
 ```
 
