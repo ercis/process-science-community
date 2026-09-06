@@ -47,6 +47,7 @@ var CONTACT_EMAIL = "zimmermann.tobias@uni-muenster.de";
       role: fd.get('role') || '',
       interest: fd.getAll('interest').join(', '),
       about: (fd.get('about') || '').trim(),
+      website: fd.get('website') || '',   // honeypot, must stay empty
       consent: fd.get('consent') ? 'yes' : 'no',
       source: document.body.dataset.source || 'landing',
       submitted_at: new Date().toISOString()

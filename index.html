@@ -362,6 +362,13 @@
               </div>
             </div>
 
+
+            <!-- Honeypot: hidden from people, filled in by naive bots. The
+                 collector silently discards any submission that has it set. -->
+            <div class="hp" aria-hidden="true">
+              <label for="f-website">Website</label>
+              <input type="text" id="f-website" name="website" tabindex="-1" autocomplete="off">
+            </div>
             <label class="consent">
               <input type="checkbox" id="f-consent" name="consent" required>
               <span>You may store these details and reply to me by email. I can withdraw this at any time by writing to the contact address below, and my entry will be removed.</span>

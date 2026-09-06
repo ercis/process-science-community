@@ -16,7 +16,10 @@ join/index.html       the same join form on its own URL, /join/  (the QR target)
 assets/styles.css     the whole design system, shared by all three pages
 assets/join.js        form validation and submission, shared by both join forms
 assets/icon.svg       favicon
+assets/*.webp         platform screenshots, light and dark
 404.html  robots.txt  sitemap.xml  CNAME
+service/              optional self-hosted collector for the join form
+keynote/              QR codes for the closing slide
 ```
 
 ## Where this repository should live
@@ -112,23 +115,39 @@ site listed by first name only keep a single letter.
 `FORM_ENDPOINT` at the top of `assets/join.js` is the one thing to change to
 make submissions land somewhere. It POSTs a flat JSON object.
 
-It currently ships as `null`, which makes the form fall back to opening a
-pre-filled email. **That fallback depends on the visitor having a working mail
-client, so it is not good enough for a QR code scanned on a phone in a keynote
-audience.** Set a real endpoint before that happens.
+It ships as `null`, which makes the form fall back to opening a pre-filled
+email. **That fallback is not good enough for a QR code scanned on a phone in a
+keynote audience**: it depends on the visitor having a working mail client, and
+on a shared or locked-down phone it does nothing at all. Set a real endpoint.
 
-**Tally will not work for this**, despite being on the shortlist. Tally only
+**Recommended: the collector in [`service/`](service/).** A small FastAPI
+service you run next to the MATE API on the ERCIS VM. It reuses the live
+`mate.uni-muenster.de` host and certificate, so it needs no new DNS record and
+no change at the university edge proxy. Personal data never leaves an ERCIS
+machine, which keeps a data processing agreement off the critical path.
+See [`service/README.md`](service/README.md).
+
+**Fallback if the VM cannot be ready in time:**
+[Formspree](https://formspree.io) or [Basin](https://usebasin.com). Create a
+form, copy the endpoint, paste it into `FORM_ENDPOINT`. Both accept exactly the
+JSON this form sends. Note that both are US processors handling personal data
+of people in the EU, so treat it as a temporary measure and tell people in the
+privacy notice.
+
+**Tally does not work here**, despite being an obvious candidate. Tally only
 offers outbound webhooks (it calls your server after someone submits a
-Tally-hosted form) and an API that needs a secret key, which cannot ship in a
-public static page. The options that do work with a one-line change are
-[Formspree](https://formspree.io) and [Basin](https://usebasin.com): create a
-form, copy the endpoint URL, paste it in. Both accept exactly the JSON this
-form sends and both have a free tier.
+*Tally-hosted* form) and an API that needs a secret key, which cannot ship in a
+public static page. The only way to use Tally would be to embed its own form,
+which would break the no-external-requests rule and would not match the design.
 
 The form markup exists twice, in `index.html` and in `join/index.html`, because
 the two pages need it in different surroundings. The validation and submission
 logic exists once, in `assets/join.js`. If you change a field, change it in
-both HTML files and check the collector in the JS still matches.
+both HTML files and check the collector in the JS and the model in
+`service/app/main.py` still match.
+
+The form carries a honeypot field named `website`. It is hidden from people and
+from screen readers; bots fill it in. Leave it alone.
 
 ## Conventions
 

@@ -1,0 +1,11 @@
+# Add inside the existing :443 block of infra/caddy/Caddyfile on the MATE VM.
+#
+# This reuses the live mate.uni-muenster.de host and certificate, so it needs no
+# new DNS record, no new certificate, and no change at the university edge
+# proxy. The landing page posts cross-origin to
+#   https://mate.uni-muenster.de/community-join/join
+# and the collector's own CORS configuration decides who may do so.
+
+handle_path /community-join/* {
+	reverse_proxy join-collector:8080
+}
