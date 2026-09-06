@@ -166,6 +166,9 @@
 
   /* ---------- sections ---------- */
   section { padding: 92px 0; }
+  /* The header is sticky and 60px tall, so an anchor jump would otherwise land
+     with the section's eyebrow and heading tucked underneath it. */
+  section[id], main[id] { scroll-margin-top: 76px; }
   .sec-head { max-width: 44em; margin: 0 auto 48px; text-align: center; }
   .sec-head .label { display: inline-block; margin-bottom: 14px; }
   h2 { font-size: clamp(27px, 3.4vw, 40px); letter-spacing: -0.025em; line-height: 1.12; font-weight: 700; }
