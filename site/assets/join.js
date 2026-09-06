@@ -1,25 +1,21 @@
 /* =======================================================================
    Join form. Shared by the landing page (#join) and /join/.
 
-   CONFIGURE ME
-   ------------
-   FORM_ENDPOINT is the one thing you change to make submissions land
-   somewhere. The form POSTs a flat JSON object, which is the shape
-   Formspree and Basin both accept out of the box:
+   FORM_ENDPOINT is where submissions go. It is a same-origin path, so the
+   browser sends no cross-origin request, there is no CORS to configure, and
+   no third party sits in the path: Caddy on the VM proxies /api/* to the
+   collector in ../service. See deploy/README.md.
 
-     Formspree : "https://formspree.io/f/abcdwxyz"
-     Basin     : "https://usebasin.com/f/xxxxxxxxxxxx"
-
-   Leave it null and the form falls back to opening a pre-filled email to
-   CONTACT_EMAIL. The page stays fully usable either way, but the mailto
-   fallback depends on the visitor having a working mail client, so set a
-   real endpoint before the QR code goes on a slide.
-
-   Note: Tally does NOT work here. Tally only offers outbound webhooks and
-   an API that needs a secret key, so it cannot receive a POST from a
-   public static page. See README.md.
+   Set it to null to fall back to opening a pre-filled email instead. That
+   fallback depends on the visitor having a working mail client, so it is not
+   good enough for a QR code scanned on a phone in a keynote audience. It is
+   here as a safety net, not as a plan.
    ======================================================================= */
-var FORM_ENDPOINT = null;
+var FORM_ENDPOINT = "/api/join";
+
+// Shown when a submission fails, and used by the mailto fallback. This is the
+// only place the contact address appears in the JavaScript; the pages carry it
+// in the footer and next to the people list.
 var CONTACT_EMAIL = "zimmermann.tobias@uni-muenster.de";
 
 (function () {

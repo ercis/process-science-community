@@ -1,0 +1,54 @@
+# Serves the landing page and the join collector from one origin.
+#
+# Same origin is the point: the form posts to /api/join on the page's own host,
+# so there is no CORS to configure and no third party in the path.
+
+{
+	# ACME account address for the Let's Encrypt certificate. Set ACME_EMAIL in
+	# deploy/.env. Caddy obtains and renews the certificate on its own, which
+	# needs ports 80 and 443 reachable from the internet.
+	email {$ACME_EMAIL}
+}
+
+process-science.org, www.process-science.org {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Cross-Origin-Opener-Policy same-origin
+		# The page loads nothing from anywhere else, so it can say so. This only
+		# holds because every script is a file under assets/ and no page has an
+		# inline <script> or style attribute left.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'"
+		-Server
+	}
+
+	# The collector. strip_prefix means the service itself only ever sees /join,
+	# so it stays mountable anywhere.
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy join-collector:8080
+	}
+
+	handle {
+		root * /srv/site
+		try_files {path} {path}/ {path}.html
+		file_server
+
+		# Fingerprinted assets are not used, so keep the cache short enough that
+		# a correction to the people list shows up the same day.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=3600"
+	}
+
+	handle_errors {
+		@404 expression {err.status_code} == 404
+		handle @404 {
+			rewrite * /404.html
+			file_server
+		}
+	}
+}

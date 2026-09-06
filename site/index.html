@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
   <symbol id="glyph" viewBox="0 0 26 26">
     <g fill="none" stroke="currentColor" stroke-width="1.7">
       <rect x="1" y="9" width="7" height="7" rx="2.2"/>
@@ -414,14 +414,10 @@
         <a href="https://ercis.github.io/MATE/">MATE</a>
         <a href="https://learning.uni-muenster.de/open/course/bpm-learning-tool">Teaching platform</a>
         <a href="https://link.springer.com/journal/44311">Journal</a>
+        <a href="mailto:zimmermann.tobias@uni-muenster.de">Contact</a>
         <a href="https://www.wi.uni-muenster.de/legal-notice">Imprint</a>
         <a href="https://www.wi.uni-muenster.de/privacy-statement">Privacy</a>
       </nav>
-    </div>
-    <div class="colophon">
-      <p>A community page, hosted by ERCIS, the European Research Center for Information Systems at the University of M&uuml;nster. Write to us at <a href="mailto:zimmermann.tobias@uni-muenster.de">zimmermann.tobias@uni-muenster.de</a>.</p>
-      <p>The community was previously at <a href="https://process-science.net/">process-science.net</a>, which is where these pages and the list of people come from.</p>
-      <p>The original site was created with the support of the Erasmus+ programme of the European Union, grant 2019-1-LI01-KA203-000169. The European Commission's support does not constitute an endorsement of the contents, which reflect the views only of the authors.</p>
     </div>
   </div>
 </footer>
@@ -566,136 +562,11 @@
 {"name":"Bernardo Nugroho Yahya","affiliation":"Hankuk University of Foreign Studies","initials":"BY"},
 {"name":"Yulia","affiliation":"Uni Liechtenstein","initials":"Y"},
 {"name":"Rashid Zaman","affiliation":"Eindhoven University of Technology","initials":"RZ"},
-{"name":"Sebastiaan van Zelst","affiliation":"Fraunhofer FIT","initials":"SZ"}]
+{"name":"Sebastiaan van Zelst","affiliation":"Fraunhofer FIT","initials":"SZ"},
+{"name":"Tobias Zimmermann","affiliation":"University of M\u00fcnster","initials":"TZ"}]
 </script>
 
-<script>
-  /* theme: follows the system by default, manual override wins and persists */
-  (function () {
-    var root = document.documentElement;
-    var btn = document.getElementById('theme-toggle');
-    var stored = null;
-    try { stored = localStorage.getItem('psc-theme'); } catch (e) {}
-    function systemDark() { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
-    function apply(theme) {
-      root.classList.add('theme-snap');
-      if (theme === 'dark') { root.setAttribute('data-theme', 'dark'); }
-      else { root.removeAttribute('data-theme'); }
-      if (btn) {
-        btn.textContent = theme === 'dark' ? '☼' : '☾';
-        btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
-      }
-      if (window.__updateShots) window.__updateShots();
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () { root.classList.remove('theme-snap'); });
-      });
-    }
-    var current = stored || (systemDark() ? 'dark' : 'light');
-    apply(current);
-    if (btn) btn.addEventListener('click', function () {
-      current = current === 'dark' ? 'light' : 'dark';
-      try { localStorage.setItem('psc-theme', current); } catch (e) {}
-      apply(current);
-    });
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (!stored) { current = e.matches ? 'dark' : 'light'; apply(current); }
-    });
-  })();
-
-  /* reveal on scroll */
-  (function () {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('on'); });
-      return;
-    }
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
-  })();
-
-  /* people: rendered from the JSON block above, so adding someone is a one-line edit.
-     The list is long, so it starts collapsed and expands on request. */
-  (function () {
-    var grid = document.getElementById('people-grid');
-    var moreBtn = document.getElementById('people-more');
-    var node = document.getElementById('people-data');
-    if (!grid || !node) return;
-    var people;
-    try { people = JSON.parse(node.textContent); } catch (e) { return; }
-
-    var COLLAPSED = 36;
-    var expanded = people.length <= COLLAPSED;
-
-    function card(p) {
-      var el = document.createElement('div');
-      el.className = 'person';
-      var av = document.createElement('span');
-      av.className = 'pavatar';
-      av.setAttribute('aria-hidden', 'true');
-      av.textContent = p.initials;
-      var who = document.createElement('div');
-      who.className = 'who';
-      var b = document.createElement('b');
-      b.textContent = p.name;
-      var s = document.createElement('span');
-      s.textContent = p.affiliation;
-      who.appendChild(b); who.appendChild(s);
-      el.appendChild(av); el.appendChild(who);
-      return el;
-    }
-
-    function render() {
-      var shown = expanded ? people : people.slice(0, COLLAPSED);
-      var frag = document.createDocumentFragment();
-      shown.forEach(function (p) { frag.appendChild(card(p)); });
-      grid.textContent = '';
-      grid.appendChild(frag);
-      if (people.length > COLLAPSED) {
-        moreBtn.hidden = false;
-        moreBtn.textContent = expanded ? 'Show fewer' : 'Show all ' + people.length + ' people';
-        moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      }
-    }
-
-    if (moreBtn) moreBtn.addEventListener('click', function () {
-      expanded = !expanded;
-      render();
-      if (!expanded) document.getElementById('people').scrollIntoView({ block: 'start' });
-      else moreBtn.focus();
-    });
-
-    render();
-
-    /* keep the headline count honest: it is derived, never typed in */
-    var stat = document.getElementById('stat-people');
-    if (stat) stat.textContent = String(people.length);
-  })();
-</script>
-<script>
-  /* platform screenshots follow the theme; if one is missing, drop the frame
-     rather than showing a broken image */
-  (function () {
-    var shots = Array.prototype.slice.call(document.querySelectorAll('.pshot img[data-shot]'));
-    if (!shots.length) return;
-    shots.forEach(function (img) {
-      img.addEventListener('error', function () {
-        var frame = img.closest('.pshot');
-        if (frame) frame.hidden = true;
-      });
-    });
-    window.__updateShots = function () {
-      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      shots.forEach(function (img) {
-        var next = img.dataset.shot + (dark ? '-dark' : '-light') + '.webp';
-        if (img.getAttribute('src') !== next) img.setAttribute('src', next);
-      });
-    };
-    window.__updateShots();
-  })();
-</script>
+<script src="assets/app.js"></script>
 <script src="assets/join.js"></script>
 
 </body>

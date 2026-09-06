@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
   <symbol id="glyph" viewBox="0 0 26 26">
     <g fill="none" stroke="currentColor" stroke-width="1.7">
       <rect x="1" y="9" width="7" height="7" rx="2.2"/>
@@ -67,29 +67,8 @@
   </div>
 </footer>
 
-<script>
-  (function () {
-    var root = document.documentElement;
-    var btn = document.getElementById('theme-toggle');
-    var stored = null;
-    try { stored = localStorage.getItem('psc-theme'); } catch (e) {}
-    function apply(theme) {
-      if (theme === 'dark') { root.setAttribute('data-theme', 'dark'); }
-      else { root.removeAttribute('data-theme'); }
-      if (btn) {
-        btn.textContent = theme === 'dark' ? '☼' : '☾';
-        btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
-      }
-    }
-    var current = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    apply(current);
-    if (btn) btn.addEventListener('click', function () {
-      current = current === 'dark' ? 'light' : 'dark';
-      try { localStorage.setItem('psc-theme', current); } catch (e) {}
-      apply(current);
-    });
-  })();
-</script>
+
+<script src="/assets/app.js"></script>
 
 </body>
 </html>

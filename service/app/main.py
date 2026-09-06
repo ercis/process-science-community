@@ -8,8 +8,8 @@ names, email addresses and employers of people in the EU, and keeping that on
 an ERCIS machine avoids putting a data processing agreement with a US provider
 on the critical path.
 
-Run it next to the MATE API on the existing VM and let the existing Caddy fan
-one path to it. See ../README.md for the deployment snippets.
+Caddy on the VM serves the landing page and proxies /api/* here, so the form
+posts same-origin. See ../deploy/README.md.
 """
 from __future__ import annotations
 
@@ -32,11 +32,11 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 DB_PATH = Path(os.environ.get("JOIN_DB_PATH", "/data/join.sqlite3"))
 # Comma-separated list of origins allowed to post. The landing page's origin.
+# Origins allowed to POST cross-origin. Empty by default: the page is served
+# from the same origin as this service, so the browser sends no cross-origin
+# request at all and nothing needs to be allowed.
 ALLOWED_ORIGINS = [
-    o.strip() for o in os.environ.get(
-        "JOIN_ALLOWED_ORIGINS",
-        "https://process-science.org,https://www.process-science.org",
-    ).split(",") if o.strip()
+    o.strip() for o in os.environ.get("JOIN_ALLOWED_ORIGINS", "").split(",") if o.strip()
 ]
 # Bearer token for the CSV export. No default: exporting is off until it is set.
 EXPORT_TOKEN = os.environ.get("JOIN_EXPORT_TOKEN", "")

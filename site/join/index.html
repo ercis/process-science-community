@@ -14,7 +14,7 @@
 </head>
 <body data-source="join-page">
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
   <symbol id="glyph" viewBox="0 0 26 26">
     <g fill="none" stroke="currentColor" stroke-width="1.7">
       <rect x="1" y="9" width="7" height="7" rx="2.2"/>
@@ -208,48 +208,15 @@
         <a href="https://ercis.github.io/MATE/">MATE</a>
         <a href="https://learning.uni-muenster.de/open/course/bpm-learning-tool">Teaching platform</a>
         <a href="https://link.springer.com/journal/44311">Journal</a>
+        <a href="mailto:zimmermann.tobias@uni-muenster.de">Contact</a>
         <a href="https://www.wi.uni-muenster.de/legal-notice">Imprint</a>
         <a href="https://www.wi.uni-muenster.de/privacy-statement">Privacy</a>
       </nav>
     </div>
-    <div class="colophon">
-      <p>A community page, hosted by ERCIS, the European Research Center for Information Systems at the University of M&uuml;nster. Write to us at <a href="mailto:zimmermann.tobias@uni-muenster.de">zimmermann.tobias@uni-muenster.de</a>.</p>
-    </div>
   </div>
 </footer>
 
-<script>
-  /* theme: follows the system by default, manual override wins and persists */
-  (function () {
-    var root = document.documentElement;
-    var btn = document.getElementById('theme-toggle');
-    var stored = null;
-    try { stored = localStorage.getItem('psc-theme'); } catch (e) {}
-    function systemDark() { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
-    function apply(theme) {
-      root.classList.add('theme-snap');
-      if (theme === 'dark') { root.setAttribute('data-theme', 'dark'); }
-      else { root.removeAttribute('data-theme'); }
-      if (btn) {
-        btn.textContent = theme === 'dark' ? '☼' : '☾';
-        btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
-      }
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () { root.classList.remove('theme-snap'); });
-      });
-    }
-    var current = stored || (systemDark() ? 'dark' : 'light');
-    apply(current);
-    if (btn) btn.addEventListener('click', function () {
-      current = current === 'dark' ? 'light' : 'dark';
-      try { localStorage.setItem('psc-theme', current); } catch (e) {}
-      apply(current);
-    });
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (!stored) { current = e.matches ? 'dark' : 'light'; apply(current); }
-    });
-  })();
-</script>
+<script src="../assets/app.js"></script>
 <script src="../assets/join.js"></script>
 
 </body>

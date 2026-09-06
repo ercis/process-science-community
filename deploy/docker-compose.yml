@@ -1,0 +1,45 @@
+# The whole site: Caddy serving the static pages and reverse-proxying the join
+# collector, on one VM, under one domain.
+#
+#   cp .env.example .env    # then fill it in
+#   docker compose up -d --build
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: "${ACME_EMAIL:?set ACME_EMAIL in deploy/.env}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Only the site directory is exposed. The repository root is deliberately
+      # not mounted: it holds .git and the service source.
+      - ../site:/srv/site:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - join-collector
+
+  join-collector:
+    build: ../service
+    restart: unless-stopped
+    environment:
+      # Same origin, so the browser sends no cross-origin request and the
+      # allowlist stays empty. Anything cross-origin is refused.
+      JOIN_ALLOWED_ORIGINS: ""
+      JOIN_EXPORT_TOKEN: "${JOIN_EXPORT_TOKEN:?set JOIN_EXPORT_TOKEN in deploy/.env}"
+      JOIN_RATE_LIMIT: "20"
+      JOIN_TRUST_PROXY: "1"
+    volumes:
+      - join-data:/data
+    # No published port: only Caddy, on the internal network, can reach it.
+    expose:
+      - "8080"
+
+volumes:
+  caddy-data:
+  caddy-config:
+  join-data:

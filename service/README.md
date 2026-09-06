@@ -36,55 +36,32 @@ so a bot learns nothing. The OpenAPI schema and docs routes are switched off.
 | `JOIN_RATE_WINDOW_S` | `3600` | |
 | `JOIN_TRUST_PROXY` | `1` | Read the client address from `X-Forwarded-For`. Only correct behind a trusted proxy |
 
-## Deploying on the existing VM
+## Deploying
 
-The cheapest route is to reuse the live `mate.uni-muenster.de` host rather than
-asking the university to route a new hostname. No new DNS record, no new
-certificate, no change at the edge proxy.
+It is not deployed on its own. `deploy/docker-compose.yml` builds this
+directory and runs it behind Caddy on the same VM as the landing page, and
+`deploy/Caddyfile` proxies `/api/*` here after stripping the prefix, so the
+service itself only ever sees `/join`. See
+[`../deploy/README.md`](../deploy/README.md).
 
-1. Copy this directory to the VM.
-2. Put `JOIN_EXPORT_TOKEN=...` in a `.env` next to `docker-compose.yml`.
-3. `docker compose up -d --build`
-4. Add the block in `Caddyfile.snippet` inside the existing `:443` block of
-   `infra/caddy/Caddyfile`, and make sure the collector shares a Docker network
-   with Caddy so `join-collector:8080` resolves.
-5. Reload Caddy.
-
-The endpoint is then `https://mate.uni-muenster.de/community-join/join`.
-Put exactly that in `FORM_ENDPOINT` at the top of `../assets/join.js`, and make
-sure the page's origin is in `JOIN_ALLOWED_ORIGINS`.
-
-Check it end to end before relying on it:
-
-```bash
-curl -i -X POST https://mate.uni-muenster.de/community-join/join \
-  -H 'Content-Type: application/json' -H 'Origin: https://process-science.org' \
-  -d '{"name":"Test","email":"test@example.org","organisation":"Test",
-       "role":"Student","interest":"Be part of the community","consent":"yes"}'
-```
-
-A `201` with `access-control-allow-origin` in the response headers means the
-page will work. Then delete the test row.
-
-## Getting the submissions out
-
-```bash
-curl -H "Authorization: Bearer $JOIN_EXPORT_TOKEN" \
-  https://mate.uni-muenster.de/community-join/admin/submissions.csv -o join.csv
-```
+Because the page and the collector share an origin, the browser sends no
+cross-origin request and `JOIN_ALLOWED_ORIGINS` stays empty. Anything that does
+arrive cross-origin is refused.
 
 ## Running it locally
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e .
 JOIN_DB_PATH=./join.sqlite3 JOIN_EXPORT_TOKEN=dev \
-  JOIN_ALLOWED_ORIGINS=http://localhost:8099 \
   .venv/bin/uvicorn app.main:app --port 8100
 ```
+
+To exercise the real arrangement instead, including Caddy, the strict CSP and
+the same-origin `/api` path, run the stack from `deploy/`.
 
 ## Retention
 
 Nothing here deletes anything. The consent line on the form promises people can
-withdraw and be removed, so someone has to be able to act on that: deleting a
-row is `DELETE FROM submissions WHERE lower(email) = lower('...')` against the
-SQLite file. Agree who owns that before the form goes live.
+withdraw and be removed, so someone has to be able to act on that. There is a
+one-liner for it in [`../deploy/README.md`](../deploy/README.md). Agree who owns
+that before the form goes live.

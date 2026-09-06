@@ -1,101 +1,63 @@
 # Process Science Community
 
-The landing page for the Process Science Community, served by GitHub Pages at
+The landing page for the Process Science Community, served at
 **https://process-science.org**.
 
 It replaces [process-science.net](https://process-science.net/), the site built
 in 2021 under an Erasmus+ grant, and adds the two community platforms that did
 not exist then plus a join form.
 
-Static HTML, CSS and vanilla JavaScript. No build step, no framework, no npm
-install, no runtime requests to anyone. Edit, push, done.
+The page is static HTML, CSS and vanilla JavaScript: no build step, no
+framework, no npm install, no runtime request to anyone. The join form posts to
+a small FastAPI collector on the same origin, so nobody's contact details leave
+the machine.
 
 ```
-index.html            the landing page, including the people data
-join/index.html       the same join form on its own URL, /join/  (the QR target)
-assets/styles.css     the whole design system, shared by all three pages
-assets/join.js        form validation and submission, shared by both join forms
-assets/icon.svg       favicon
-assets/*.webp         platform screenshots, light and dark
-404.html  robots.txt  sitemap.xml  CNAME
-service/              optional self-hosted collector for the join form
-keynote/              QR codes for the closing slide
+site/                 the static site, served as the web root
+  index.html          the landing page, including the people data
+  join/index.html     the same join form on its own URL, /join/  (the QR target)
+  assets/styles.css   the design system, shared by all three pages
+  assets/app.js       theme, scroll reveals, people grid, platform screenshots
+  assets/join.js      form validation and submission
+  404.html  robots.txt  sitemap.xml
+service/              the join collector (FastAPI + SQLite)
+deploy/               Caddy + docker compose, the whole VM stack
+keynote/              QR code for the closing slide
 ```
+
+## Deploying
+
+Everything runs on one VM: see **[deploy/README.md](deploy/README.md)** for DNS,
+first run, updating, backups and the export token.
+
+Updating the page after the first deploy is `git pull` on the VM. There is
+nothing to build.
 
 ## Where this repository should live
 
-It is in `ercis` for now, next to
-[`ercis/MATE`](https://github.com/ercis/MATE), because that org already exists
-and Pages with a custom domain works there today.
+It is in `ercis` for now, next to [`ercis/MATE`](https://github.com/ercis/MATE).
 
 **The intended home is a dedicated Process Science Community GitHub org**, to be
 created later, with MATE and the teaching platform moving into it as well. When
 that happens, transfer this repository rather than re-creating it: GitHub keeps
-the redirects, and every internal link on the site is relative, so nothing on
-the page breaks. The only things to redo are the `www` DNS record (below) and
-the Pages source setting.
+the redirects, every internal link on the site is relative, and the deployment
+only needs its remote updated.
 
 ## Preview locally
 
 ```bash
-python3 -m http.server -d . 8099
+python3 -m http.server -d site 8099
 ```
 
-Then open http://localhost:8099. The page also works opened straight from disk
-as a `file://` URL, which is why the people data is embedded in `index.html`
-rather than fetched from a separate JSON file. (`404.html` is the exception: it
-uses root-absolute asset paths, because Pages serves it for a miss at any depth.)
-
-## Deploying
-
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes the
-repository root on every push to `main`.
-
-One-time setup, in this order:
-
-1. **Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".**
-   The repository has to be public.
-2. Set the DNS records below at the registrar for `process-science.org`.
-3. **Settings -> Pages -> Custom domain:** enter `process-science.org`. The
-   `CNAME` file already holds it, so this should already be filled in.
-4. Wait for the certificate to be issued, then tick **Enforce HTTPS** on the
-   same settings page. It stays greyed out until the certificate is ready,
-   which is usually minutes but can take up to 24 hours.
-
-### DNS records
-
-For the apex domain `process-science.org`, four `A` records:
-
-```
-185.199.108.153
-185.199.109.153
-185.199.110.153
-185.199.111.153
-```
-
-And, if you also want IPv6, four `AAAA` records:
-
-```
-2606:50c0:8000::153
-2606:50c0:8001::153
-2606:50c0:8002::153
-2606:50c0:8003::153
-```
-
-For `www.process-science.org`, one `CNAME` record pointing at:
-
-```
-ercis.github.io
-```
-
-If the repository moves to a different owner later, that `CNAME` value changes
-to `<new-owner>.github.io`. The `A` records do not change.
+Then open http://localhost:8099. The form will not submit against that server,
+because there is no `/api` behind it: to exercise the whole thing, run the real
+stack from `deploy/`.
 
 ## Editing the page
 
 ### People
 
-The people list is a JSON block at the bottom of `index.html`, marked
+The people list is a JSON block at the bottom of `site/index.html`, marked
 `<script type="application/json" id="people-data">`. One person per line:
 
 ```json
@@ -112,42 +74,34 @@ site listed by first name only keep a single letter.
 
 ### The join form
 
-`FORM_ENDPOINT` at the top of `assets/join.js` is the one thing to change to
-make submissions land somewhere. It POSTs a flat JSON object.
+`FORM_ENDPOINT` at the top of `site/assets/join.js` is `/api/join`, a
+same-origin path that Caddy proxies to the collector. Setting it to `null`
+makes the form fall back to opening a pre-filled email instead, which is a
+safety net rather than a plan: it depends on the visitor having a working mail
+client, and on a locked-down phone it does nothing at all.
 
-It ships as `null`, which makes the form fall back to opening a pre-filled
-email. **That fallback is not good enough for a QR code scanned on a phone in a
-keynote audience**: it depends on the visitor having a working mail client, and
-on a shared or locked-down phone it does nothing at all. Set a real endpoint.
-
-**Recommended: the collector in [`service/`](service/).** A small FastAPI
-service you run next to the MATE API on the ERCIS VM. It reuses the live
-`mate.uni-muenster.de` host and certificate, so it needs no new DNS record and
-no change at the university edge proxy. Personal data never leaves an ERCIS
-machine, which keeps a data processing agreement off the critical path.
-See [`service/README.md`](service/README.md).
-
-**Fallback if the VM cannot be ready in time:**
-[Formspree](https://formspree.io) or [Basin](https://usebasin.com). Create a
-form, copy the endpoint, paste it into `FORM_ENDPOINT`. Both accept exactly the
-JSON this form sends. Note that both are US processors handling personal data
-of people in the EU, so treat it as a temporary measure and tell people in the
-privacy notice.
-
-**Tally does not work here**, despite being an obvious candidate. Tally only
-offers outbound webhooks (it calls your server after someone submits a
-*Tally-hosted* form) and an API that needs a secret key, which cannot ship in a
-public static page. The only way to use Tally would be to embed its own form,
-which would break the no-external-requests rule and would not match the design.
-
-The form markup exists twice, in `index.html` and in `join/index.html`, because
-the two pages need it in different surroundings. The validation and submission
-logic exists once, in `assets/join.js`. If you change a field, change it in
-both HTML files and check the collector in the JS and the model in
-`service/app/main.py` still match.
+The form markup exists twice, in `site/index.html` and in
+`site/join/index.html`, because the two pages need it in different
+surroundings. The validation and submission logic exists once, in
+`site/assets/join.js`. If you change a field, change it in both HTML files and
+check the collector in the JS and the model in `service/app/main.py` still
+match.
 
 The form carries a honeypot field named `website`. It is hidden from people and
-from screen readers; bots fill it in. Leave it alone.
+from screen readers; bots fill it in, and the collector discards those
+submissions after answering them normally. Leave it alone.
+
+**Hosted form services were considered and rejected.** Tally cannot do this at
+all: it offers outbound webhooks and a key-authenticated API, neither of which
+can receive a POST from a public static page. Formspree and Basin can, but both
+are US processors handling personal data of people in the EU, which puts a data
+processing agreement on the critical path. Self-hosting avoids the question.
+
+### The contact address
+
+It appears in four places: `CONTACT_EMAIL` in `site/assets/join.js`, the footer
+of `site/index.html` and `site/join/index.html`, and the "correct or remove my
+entry" line next to the people list. Change all four together.
 
 ## Conventions
 
@@ -155,17 +109,17 @@ from screen readers; bots fill it in. Leave it alone.
 - No em dashes anywhere in the copy. Use a colon, a comma or a full stop.
 - No external requests at runtime: no CDN, no web fonts, no analytics, no
   trackers. That is also why there is no cookie banner: there is nothing to
-  consent to.
+  consent to. The `Content-Security-Policy` in `deploy/Caddyfile` enforces it,
+  which is why **no page may contain an inline `<script>` or `style`
+  attribute**. Put script in `site/assets/app.js`.
 - Every outbound link and every conference date on the page was checked against
   the organisers' own pages in September 2026. Conference dates drift; re-check
   before a relaunch.
-- The `--muted` colour is one shade darker than the MATE landing page's, because
-  MATE's value is 3.4:1 on white and fails WCAG AA for body text. Everything
-  else in the design system is MATE's, unchanged.
+- The design system is the MATE landing page's
+  ([`ercis/MATE`](https://github.com/ercis/MATE), `landing/`), so the two read
+  as siblings. One deliberate deviation: `--muted` is a shade darker here,
+  because MATE's value is 3.4:1 on white and fails WCAG AA for body text.
 
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
-
-The page was originally created with the support of the Erasmus+ programme of
-the European Union, grant 2019-1-LI01-KA203-000169.
