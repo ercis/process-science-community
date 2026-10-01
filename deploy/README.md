@@ -210,9 +210,36 @@ token out of `.env` by itself:
 | `./submissions.sh count` | how many so far |
 | `./submissions.sh list` | every submission, readable, newest last |
 | `./submissions.sh interests` | tally of what people want to do, and roles |
+| `./submissions.sh outreach` | who to contact, grouped by what they asked for |
+| `./submissions.sh people` | JSON lines for anyone not yet on the people list |
 | `./submissions.sh csv [file]` | save the raw CSV for a spreadsheet |
 | `./submissions.sh watch` | live count, refreshed every 10s |
+| `./submissions.sh sql "SELECT ..."` | ad-hoc read-only query |
 | `./submissions.sh remove ADDRESS` | delete one person's row |
+
+`outreach` is the one to work from after an event. It splits people by what
+they actually asked for, so the research platform list and the teaching
+platform list are separate, and **use** is separate from **contribute**, which
+is the whole reason that question is on the form. It prints each person's free
+text too, because that is what tells you what to say to them.
+
+`people` compares the submissions against the people block in
+`site/index.html` and prints ready-to-paste JSON lines for anyone missing,
+with the initials worked out. Paste them in, re-sort the block by surname, and
+push. Check the initials by hand for any name with a particle: the rule takes
+the last word, which is right for "van der Berg" and wrong for a few others.
+
+`sql` and `remove` talk to the container directly, so they only work on the VM
+and need no token. `sql` refuses anything that is not a `SELECT`.
+
+### Consent, before you publish anyone's name
+
+The consent line on the form covers **storing their details and replying by
+email**. It does not say their name and affiliation will be listed publicly on
+the landing page. The people list is a public page on a public domain, so
+before adding anyone from the form, either ask them, or change the form wording
+and only auto-add people who agreed to the new wording. `people` prints this
+reminder every time for a reason.
 
 It works from a laptop too, given the token:
 
