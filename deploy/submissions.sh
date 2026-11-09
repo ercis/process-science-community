@@ -7,6 +7,7 @@
 #   ./submissions.sh interests       tally of what people want to do
 #   ./submissions.sh outreach        who to contact, grouped by what they asked for
 #   ./submissions.sh people          JSON lines for anyone not yet on the page
+#   ./submissions.sh match FILE      people whose institution is in FILE (.xlsx/.csv/.txt)
 #   ./submissions.sh csv [file]      save the raw CSV (default join-YYYY-MM-DD.csv)
 #   ./submissions.sh watch           live count, refreshed every 10s
 #   ./submissions.sh remove ADDRESS  delete one person's row
@@ -216,6 +217,13 @@ The consent line on the form covers storing their details and replying by
 email. It does not say their name will be listed publicly on the page. Ask
 them first, or amend the form wording before collecting more.""")
 ' "$here/../site/index.html"
+	;;
+
+match)
+	list="${2:-}"
+	[ -z "$list" ] && { echo "usage: $0 match partners.xlsx" >&2; exit 1; }
+	fetch_csv | python3 "$here/match_institutions.py" --institutions "$list" --submissions - \
+		--out "${3:-cluster-contacts-$(date +%F).csv}"
 	;;
 
 watch)
